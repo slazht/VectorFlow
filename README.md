@@ -37,6 +37,10 @@ In modern AI applications, the quality of retrieved context is everything. **Vec
 
 ---
 
-## 🏁 Getting Started
+## 🏁 Screshots
 
-###
+![Tampilan Dashboard](./screenshots/dashboard.png)
+
+![Chunk Editor](./screenshots/datacuration.png)
+
+![Semantic Search](./screenshots/semanticsearch.png)

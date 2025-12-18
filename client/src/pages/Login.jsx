@@ -88,7 +88,7 @@ const Login = () => {
                     </form>
                 </div>
                 <div className="bg-slate-50 p-4 text-center border-t border-slate-100">
-                    <p className="text-xs text-slate-400">Default: admin / admin123</p>
+                    <p className="text-xs text-slate-400"></p>
                 </div>
             </div>
         </div>
