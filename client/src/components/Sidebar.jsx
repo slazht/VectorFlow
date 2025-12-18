@@ -13,7 +13,7 @@ const Sidebar = () => {
     return (
         <aside className="w-64 bg-sidebar text-sidebar-foreground h-screen flex flex-col p-4 border-r border-gray-700">
             <div className="mb-8 p-2">
-                <h1 className="text-2xl font-bold text-primary-foreground tracking-tight">DataCorrector</h1>
+                <h1 className="text-2xl font-bold text-primary-foreground tracking-tight">VectorFlow</h1>
             </div>
             <nav className="flex-1 space-y-2">
                 {navItems.map((item) => (

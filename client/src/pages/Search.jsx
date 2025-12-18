@@ -3,10 +3,11 @@ import { Search, Zap, Type, Loader2, FileText } from 'lucide-react';
 import api from '../api';
 
 const SearchPage = () => {
-    const [searchType, setSearchType] = useState('text'); // 'text' | 'vector'
+    const [searchType, setSearchType] = useState('vector'); // 'text' | 'vector'
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [topK, setTopK] = useState(20);
 
     const handleSearch = async (e) => {
         e.preventDefault();
@@ -17,7 +18,7 @@ const SearchPage = () => {
 
         try {
             const endpoint = searchType === 'vector' ? '/search/vector' : '/search/text';
-            const res = await api.post(endpoint, { query });
+            const res = await api.post(endpoint, { query, limit: topK });
             setResults(res.data);
         } catch (err) {
             console.error("Search failed:", err);
@@ -42,8 +43,8 @@ const SearchPage = () => {
                         <button
                             onClick={() => setSearchType('text')}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${searchType === 'text'
-                                    ? 'bg-white text-blue-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
                             <Type size={16} />
@@ -52,13 +53,33 @@ const SearchPage = () => {
                         <button
                             onClick={() => setSearchType('vector')}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${searchType === 'vector'
-                                    ? 'bg-white text-violet-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
+                                ? 'bg-white text-violet-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
                             <Zap size={16} />
                             Vector Search
                         </button>
+                    </div>
+
+                    {/* Top-K Slider */}
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-slate-600 mb-2 flex justify-between">
+                            <span>Top-K Results</span>
+                            <span className="text-blue-600 font-bold">{topK}</span>
+                        </label>
+                        <input
+                            type="range"
+                            min="1"
+                            max="100"
+                            value={topK}
+                            onChange={(e) => setTopK(parseInt(e.target.value))}
+                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                        />
+                        <div className="flex justify-between text-xs text-slate-400 mt-1">
+                            <span>1</span>
+                            <span>100</span>
+                        </div>
                     </div>
 
                     <form onSubmit={handleSearch} className="flex flex-col gap-4">
@@ -117,31 +138,64 @@ const SearchPage = () => {
                     ) : (
                         <div className="space-y-4">
                             {results.map((item, idx) => (
-                                <div key={idx} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <FileText size={14} className="text-slate-400" />
-                                            <span className="text-xs font-medium text-slate-600 truncate max-w-[200px]">
-                                                {item.payload?.file_name || 'Unknown File'}
-                                            </span>
-                                            {item.score && (
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${item.score > 0.8 ? 'bg-green-100 text-green-700' :
-                                                        item.score > 0.7 ? 'bg-amber-100 text-amber-700' :
-                                                            'bg-slate-100 text-slate-600'
-                                                    }`}>
-                                                    {(item.score * 100).toFixed(1)}%
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <p className="text-sm text-slate-700 leading-relaxed line-clamp-4">
-                                        {item.payload?.content || item.payload?.original_text || JSON.stringify(item.payload)}
-                                    </p>
-                                </div>
+                                <SearchResultCard key={idx} item={item} />
                             ))}
                         </div>
                     )}
                 </div>
+            </div>
+        </div>
+    );
+};
+
+const SearchResultCard = ({ item }) => {
+    const [expanded, setExpanded] = React.useState(false);
+    const content = item.payload?.content || item.payload?.original_text || JSON.stringify(item.payload);
+    const isLong = content.length > 300;
+
+    return (
+        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2">
+                    <FileText size={14} className="text-slate-400" />
+                    <span className="text-xs font-medium text-slate-600 truncate max-w-[200px]">
+                        {item.payload?.file_name || 'Unknown File'}
+                    </span>
+                    {item.score && (
+                        <div className="flex items-center gap-2">
+                            {/* Score Badge */}
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${item.score > 0.8 ? 'bg-green-100 text-green-700' :
+                                item.score > 0.7 ? 'bg-amber-100 text-amber-700' :
+                                    'bg-slate-100 text-slate-600'
+                                }`}>
+                                {item.score.toFixed(4)}
+                            </span>
+                            {/* Score Progress Bar (Only for vector search/when score exists) */}
+                            <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full ${item.score > 0.8 ? 'bg-green-500' :
+                                        item.score > 0.7 ? 'bg-amber-500' :
+                                            'bg-slate-400'
+                                        }`}
+                                    style={{ width: `${item.score * 100}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="text-sm text-slate-700 leading-relaxed">
+                <p className={`${expanded ? '' : 'line-clamp-4'} font-mono`}>
+                    {content}
+                </p>
+                {isLong && (
+                    <button
+                        onClick={() => setExpanded(!expanded)}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-2 focus:outline-none"
+                    >
+                        {expanded ? 'Show Less' : 'Show More'}
+                    </button>
+                )}
             </div>
         </div>
     );

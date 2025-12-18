@@ -362,7 +362,8 @@ router.post('/search/text', async (req, res) => {
             return content.toLowerCase().includes(lowerQuery);
         });
 
-        res.json(filtered.slice(0, 50)); // Return top 50
+        const limit = parseInt(req.body.limit) || 20;
+        res.json(filtered.slice(0, limit)); // Return top K
 
     } catch (err) {
         console.error("Text Search Error:", err);
@@ -385,9 +386,10 @@ router.post('/search/vector', async (req, res) => {
         const vector = Array.from(output.data);
 
         // 2. Search Qdrant
+        const limit = parseInt(req.body.limit) || 20;
         const result = await qdrant.search('linkchat', {
             vector: vector,
-            limit: 20,
+            limit: limit,
             with_payload: true
         });
 
